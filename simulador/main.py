@@ -61,7 +61,7 @@ max_steering_angle = 0.5  # Defina o ângulo máximo de esterçamento desejado
 
 i = 0
 
-while car.t < 20.0:
+while car.t < 3.0:
     # Lê sensores
 	car.step()
 
@@ -86,12 +86,13 @@ while car.t < 20.0:
     # Calcula o ângulo de direção com base no controlador lateral (Stanley)
 	current_pose = np.array([car.getPos()[0], car.getPos()[1]])
 	reference_pose = np.array([0, referencia_y])
-	steering_controller = StanleyController(k_lateral, k_crosstrack, max_steering_angle)
-	steering_angle = steering_controller.calculate_steering_angle(current_pose, reference_pose)
+	steering_controller = StanleyController(k_lateral, k_crosstrack)
+	steering_angle = steering_controller.calculate_steering_angle(current_pose, reference_pose, car.v, car.getYaw())
 
     # Define a abertura do acelerador e o ângulo de direção com base nos controles
 	car.setU(control_signal_longitudinal)
-	car.setSteer(-steering_angle)
+	car.setSteer(steering_angle)
+	print(steering_angle, car.getYaw())
 
     # Salva dados para plotagem
 	vel.append(car.v)

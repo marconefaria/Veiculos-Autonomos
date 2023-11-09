@@ -2,25 +2,47 @@ import math
 import numpy as np
 
 class StanleyController:
-    def __init__(self, k, k_crosstrack, max_steering_angle):
+    def __init__(self, k, k_crosstrack):
         self.k = k  # Ganho do controlador
         self.k_crosstrack = k_crosstrack  # Ganho do erro lateral
-        self.max_steering_angle = max_steering_angle  # Ângulo máximo de esterçamento
+        self.prev_error = 0  # Erro de direção anterior
 
-    def calculate_steering_angle(self, current_pose, reference_pose):
-        # Calcula o erro lateral (cross-track error) separadamente para as coordenadas x e y
-        erro_x = reference_pose[0] - current_pose[0]
-        erro_y = reference_pose[1] - current_pose[1]
+    def calculate_steering_angle(self, current_pose, reference_pose, current_speed, current_yaw):
+        # Extrai as coordenadas dos pontos
+        a, b, c = calcular_coeficientes(reference_pose, current_pose)
 
-        # Calcula o módulo do erro lateral
-        erro = math.sqrt(erro_x**2 + erro_y**2)
+        # Calcula o cross track error
+        error = (a*current_pose[0] + b*current_pose[1] + c) / np.sqrt(a**2 + b**2)
 
-        # Calcula o ângulo de direção
-        steering_angle = self.k * np.arctan2(1.0, self.k_crosstrack * erro)
+        # Calcula o cross track steering
+        cross_track_steering = np.arctan2(self.k_crosstrack * error, current_speed)
 
-        # Limita o ângulo de direção dentro dos limites
-        steering_angle = np.clip(steering_angle, -self.max_steering_angle, self.max_steering_angle)
+        # Calcula o heading error
+        theta_c = math.atan2(reference_pose[1] - current_pose[1], reference_pose[0] - current_pose[0])
+        heading_error = theta_c - current_yaw
 
-        print(steering_angle)
+        # Normaliza o resultado para o intervalo de -pi a pi
+        heading_error = (heading_error + math.pi) % (2 * math.pi) - math.pi 
+
+        # Calcula o steering angle
+        steering_angle = math.radians(heading_error + cross_track_steering)
 
         return steering_angle
+    
+def calcular_coeficientes(ponto_referencia, ponto_atual):
+    # Extrai as coordenadas dos pontos
+    xr, yr = ponto_referencia
+    xc, yc = ponto_atual
+
+    # Calcula o ponto médio
+    ponto_medio = ((xr + xc) / 2, (yr + yc) / 2)
+
+    # Calcula a distância entre os dois pontos
+    distancia = math.sqrt((xc - xr)**2 + (yc - yr)**2)
+
+    # Calcula os coeficientes
+    a = 1 / distancia
+    b = -1 / distancia
+    c = -a * ponto_medio[0] - b * ponto_medio[1]
+
+    return a, b, c
