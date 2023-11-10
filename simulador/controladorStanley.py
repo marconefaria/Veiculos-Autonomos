@@ -2,8 +2,7 @@ import math
 import numpy as np
 
 class StanleyController:
-    def __init__(self, k, k_crosstrack):
-        self.k = k  # Ganho do controlador
+    def __init__(self, k_crosstrack):
         self.k_crosstrack = k_crosstrack  # Ganho do erro lateral
         self.prev_error = 0  # Erro de direção anterior
 
