@@ -129,7 +129,44 @@ def processa_imagem(car):
     plt.pause(0.01)
 
 
-def roadDetection(frame_bgr):
+def roadDetection(frame):
+    # Converte para tons de cinza
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+    # Aplica um filtro Gaussiano para suavizar a imagem
+    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+
+    # Detecta bordas usando a detecção de bordas de Canny
+    edges = cv2.Canny(blurred, 50, 150)
+
+    # Aplica a Transformada de Hough para detecção de linhas
+    lines = cv2.HoughLines(edges, 1, np.pi/180, threshold=50)
+
+    # Calcula a orientação média das linhas
+    if lines is not None and len(lines) > 0:
+        angles = [line[0][1] for line in lines]
+        average_angle = np.mean(angles)
+        a = np.sin(average_angle)
+        b = np.cos(average_angle)
+
+        # Desenha uma linha representando a trajetória da pista
+        x0 = a * 500
+        y0 = b * 500
+        x1 = int(x0 + 1000 * (-b))
+        y1 = int(y0 + 1000 * (a))
+        x2 = int(x0 - 1000 * (-b))
+        y2 = int(y0 - 1000 * (a))
+
+        # Desenha a linha na imagem original
+        lane_image = frame.copy()
+        cv2.line(lane_image, (x1, y1), (x2, y2), (0, 0, 255), 2)
+    else:
+        lane_image = frame.copy()
+
+    return lane_image
+
+
+""" def roadDetection(frame_bgr):
     # Converte para tons de cinza
     frame_gray = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2GRAY)
 
@@ -142,23 +179,26 @@ def roadDetection(frame_bgr):
     # Encontra as linhas retas usando a Transformada de Hough
     lines = cv2.HoughLines(edges, 1, np.pi/180, threshold=50)
 
-    # Desenha a linha reta na imagem original
-    result = frame_bgr.copy()
+    # Calcula a média dos parâmetros das linhas
+    if lines is not None and len(lines) > 0:
+        average_rho = np.mean(lines[:, :, 0])
+        average_theta = np.mean(lines[:, :, 1])
+        a = np.sin(average_theta)
+        b = np.cos(average_theta)
+        x0 = a * average_rho
+        y0 = b * average_rho
+        x1 = int(x0 + 1000 * (-b))
+        y1 = int(y0 + 1000 * (a))
+        x2 = int(x0 - 1000 * (-b))
+        y2 = int(y0 - 1000 * (a))
 
-    if lines is not None:
-        for line in lines:
-            rho, theta = line[0]
-            a = np.cos(theta)
-            b = np.sin(theta)
-            x0 = a * rho
-            y0 = b * rho
-            x1 = int(x0 + 1000 * (-b))
-            y1 = int(y0 + 1000 * (a))
-            x2 = int(x0 - 1000 * (-b))
-            y2 = int(y0 - 1000 * (a))
-            cv2.line(result, (x1, y1), (x2, y2), (0, 0, 255), 2)
+        # Desenha a linha média na imagem original
+        result = frame_bgr.copy()
+        cv2.line(result, (x1, y1), (x2, y2), (0, 0, 255), 2)
+    else:
+        result = frame_bgr.copy()
 
-    return result
+    return result """
 
 
 def main():
@@ -187,13 +227,13 @@ def main():
         car.step()
 
         # processa_imagem(car)
-        """ image_with_lines = roadDetection(car.getImage())
+        image_with_lines = roadDetection(car.getImage())
 
         plt.clf()
         plt.gca().imshow(image_with_lines, origin='lower')
         plt.axis('off')
         plt.show()
-        plt.pause(0.01) """
+        plt.pause(0.01)
 
         # Atualiza a referência de posição
         referencia_y = referencia_y + 0.5*car.t
