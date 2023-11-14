@@ -218,7 +218,7 @@ def main():
     # Parâmetros do controlador lateral (Stanley)
     k_crosstrack = 10.0
 
-    referencia_y = 0
+    referencia_y = np.linspace(-3, -1.5, 60)
 
     i = 0
 
@@ -227,19 +227,20 @@ def main():
         car.step()
 
         # processa_imagem(car)
-        image_with_lines = roadDetection(car.getImage())
+        """ image_with_lines = roadDetection(car.getImage())
 
         plt.clf()
         plt.gca().imshow(image_with_lines, origin='lower')
         plt.axis('off')
         plt.show()
-        plt.pause(0.01)
+        plt.pause(0.01) """
 
         # Atualiza a referência de posição
-        referencia_y = referencia_y + 0.5*car.t
+        # referencia_y = referencia_y + car.getVel()[0]*car.t
 
         # Erro de velocidade para o controlador longitudinal
         erro_longitudinal = velocidade_referencia - car.v
+        print(car.getPos()[1], referencia_y[i])
 
         # Ação de controle do PID (controlador longitudinal)
         integrated_error_longitudinal += erro_longitudinal
@@ -252,17 +253,14 @@ def main():
 
         # Calcula o ângulo de direção com base no controlador lateral (Stanley)
         current_pose = np.array([car.getPos()[0], car.getPos()[1]])
-        reference_pose = np.array([0, referencia_y])
+        reference_pose = np.array([0, referencia_y[i]])
         steering_controller = StanleyController(k_crosstrack)
         steering_angle = steering_controller.calculate_steering_angle(
             current_pose, reference_pose, car.v, car.getYaw())
 
         # Define a abertura do acelerador e o ângulo de direção com base nos controles
         car.setU(control_signal_longitudinal)
-        car.setSteer(steering_angle)
-
-        print(steering_angle, car.getYaw())
-
+        car.setSteer(-steering_angle)
         i = i + 1
 
     # Salva dados para plotagem

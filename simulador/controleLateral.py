@@ -20,41 +20,52 @@ time = []
 
 # Velocidade de referência,
 car.setU(5)
-reference_x = [0, 0] # Trajetória de referência (uma reta em x = 0)
+
+# Parâmetros do controlador lateral (Stanley)
+k_crosstrack = 0.01
+referencia_y = np.linspace(-3, 0, 60)
+i = 0
+
+velocidade_referencia = car.getVel()[0]
+print(car.getVel()[0])
 
 while car.t < 3.0:
-	# lê sensores
-	car.step()
-	
-	k = 10
-	k_crosstrack = 0.1
-	max_steering_angle = np.radians(2.0)
+    # lê sensores
+    car.step()
 
-    # Posição atual do veículo (x, y, ângulo)
-	current_pose = np.array([car.getPos()[0], car.getPos()[1], car.getYaw()])
+    k = 10
 
-	controller = StanleyController(k, k_crosstrack, max_steering_angle)
+# Posição atual do veículo (x, y, ângulo)
+    current_pose = np.array([car.getPos()[0], car.getPos()[1]])
 
-    # Calcula o ângulo de direção
-	steering_angle = controller.calculate_steering_angle(current_pose)
-	car.setSteer(steering_angle)
+    controller = StanleyController(k_crosstrack)
+    reference_pose = np.array([0, referencia_y[i]])
 
-	# Salva dados
-	time.append(car.t)
-	pos_x = car.getPos()[0]
-	pos_y = car.getPos()[1]
-	posX.append(pos_x)
-	posY.append(pos_y)
+# Calcula o ângulo de direção
+    steering_angle = controller.calculate_steering_angle(
+        current_pose, reference_pose, car.v, car.getYaw())
+    car.setSteer(-steering_angle)
 
-	plt.clf()
-	plt.axhline(y=0, color='k', linestyle='--', label='Reta x = 0')
-	plt.plot(time, posX, 'r', label='Posição atual')
-	plt.xlabel('Tempo(s)')
-	plt.ylabel('X')
-	plt.legend()
-	plt.show()
-	plt.pause(0.01)
+    print(car.getPos()[1], referencia_y[i])
+
+    i = i + 1
+
+    # Salva dados
+    time.append(car.t)
+    pos_x = car.getPos()[0]
+    pos_y = car.getPos()[1]
+    posX.append(pos_x)
+    posY.append(pos_y)
+
+    plt.clf()
+    plt.axhline(y=0, color='k', linestyle='--', label='Reta x = 0')
+    plt.plot(time, posX, 'r', label='Posição atual')
+    plt.xlabel('Tempo(s)')
+    plt.ylabel('X')
+    plt.legend()
+    plt.show()
+    plt.pause(0.01)
 
 plt.savefig('testeLateral.png')
-	
+
 print('Terminou...')
